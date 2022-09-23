@@ -7,9 +7,9 @@ void Door_Init(void)
     HAL_GPIO_WritePin(MOTOR_IB_GPIO_Port, MOTOR_IB_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(MOTOR_IA_GPIO_Port, MOTOR_IA_Pin, GPIO_PIN_RESET);
 
-    Open_Door();
-    HAL_Delay(200);
     Close_Door();
+    HAL_Delay(200);
+    Open_Door();
 }
 
 
@@ -74,3 +74,19 @@ void Close_Door(void)
 ////    Delay_ms(200);
 ////    TIM_Cmd(TIM2,DISABLE);
 //}
+
+extern osMessageQId Door_LockHandle;
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    uint8_t i = 1;//1是锁门 0是开门
+    if(GPIO_Pin == GPIO_PIN_13)
+    {
+
+        xQueueSendToBackFromISR(Door_LockHandle, &i, 0);
+    }
+
+}
+
+
+

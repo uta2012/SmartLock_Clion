@@ -53,6 +53,11 @@ osThreadId RFIDHandle;
 osThreadId LEDHandle;
 osThreadId DoorHandle;
 osThreadId ESP32Handle;
+osThreadId BS8116Handle;
+osThreadId VoiceHandle;
+osThreadId Password_dealHandle;
+osMessageQId Door_LockHandle;
+osMessageQId KeyboardHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -65,6 +70,9 @@ void RFID_entry(void const * argument);
 void LED_entry(void const * argument);
 void Door_entry(void const * argument);
 void ESP32_entry(void const * argument);
+void BS8116_entry(void const * argument);
+void Voice_enrty(void const * argument);
+void Password_entry(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -106,6 +114,15 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* definition and creation of Door_Lock */
+  osMessageQDef(Door_Lock, 4, uint8_t);
+  Door_LockHandle = osMessageCreate(osMessageQ(Door_Lock), NULL);
+
+  /* definition and creation of Keyboard */
+  osMessageQDef(Keyboard, 16, uint8_t);
+  KeyboardHandle = osMessageCreate(osMessageQ(Keyboard), NULL);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -120,7 +137,7 @@ void MX_FREERTOS_Init(void) {
   LCDHandle = osThreadCreate(osThread(LCD), NULL);
 
   /* definition and creation of RFID */
-  osThreadDef(RFID, RFID_entry, osPriorityIdle, 0, 512);
+  osThreadDef(RFID, RFID_entry, osPriorityIdle, 0, 128);
   RFIDHandle = osThreadCreate(osThread(RFID), NULL);
 
   /* definition and creation of LED */
@@ -128,12 +145,24 @@ void MX_FREERTOS_Init(void) {
   LEDHandle = osThreadCreate(osThread(LED), NULL);
 
   /* definition and creation of Door */
-  osThreadDef(Door, Door_entry, osPriorityHigh, 0, 512);
+  osThreadDef(Door, Door_entry, osPriorityHigh, 0, 128);
   DoorHandle = osThreadCreate(osThread(Door), NULL);
 
   /* definition and creation of ESP32 */
   osThreadDef(ESP32, ESP32_entry, osPriorityIdle, 0, 512);
   ESP32Handle = osThreadCreate(osThread(ESP32), NULL);
+
+  /* definition and creation of BS8116 */
+  osThreadDef(BS8116, BS8116_entry, osPriorityIdle, 0, 256);
+  BS8116Handle = osThreadCreate(osThread(BS8116), NULL);
+
+  /* definition and creation of Voice */
+  osThreadDef(Voice, Voice_enrty, osPriorityIdle, 0, 128);
+  VoiceHandle = osThreadCreate(osThread(Voice), NULL);
+
+  /* definition and creation of Password_deal */
+  osThreadDef(Password_deal, Password_entry, osPriorityIdle, 0, 512);
+  Password_dealHandle = osThreadCreate(osThread(Password_deal), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -151,7 +180,7 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  UBaseType_t task1, task2, task3, task4, task5, task6;
+  UBaseType_t task1, task2, task3, task4, task5, task6, task7, task8, task9;
   /* Infinite loop */
   for(;;)
   {
@@ -162,10 +191,31 @@ void StartDefaultTask(void const * argument)
     task4 = uxTaskGetStackHighWaterMark(LEDHandle);
     task5 = uxTaskGetStackHighWaterMark(DoorHandle);
     task6 = uxTaskGetStackHighWaterMark(ESP32Handle);
+    task7 = uxTaskGetStackHighWaterMark(BS8116Handle);
+    task8 = uxTaskGetStackHighWaterMark(VoiceHandle);
+    task9 = uxTaskGetStackHighWaterMark(Password_dealHandle);
 
-    printf("task1 : %ld\ntask2 : %ld\ntask3 : %ld\ntask4 : %ld\ntask5 : %ld\ntask6 : %ld\n",
-             task1, task2, task3, task4, task5, task6);
-    osDelay(30000);
+
+    printf("task1 : %ld\n"
+           "task2 : %ld\n"
+           "task3 : %ld\n"
+           "task4 : %ld\n"
+           "task5 : %ld\n"
+           "task6 : %ld\n"
+           "task7 : %ld\n"
+           "task8 : %ld\n"
+           "task9 : %ld\n",
+             task1,
+             task2,
+             task3,
+             task4,
+             task5,
+             task6,
+             task7,
+             task8,
+             task9
+             );
+    osDelay(3000);
 
 
 
@@ -233,6 +283,8 @@ void RFID_entry(void const * argument)
   {
       if(PcdRequest(PICC_REQALL, CT) == MI_OK)//寻�?��?功
       {
+          int i = 0;//�?�0是开门，�?�1是关门
+          xQueueSend(Door_LockHandle, &i, 0);
           if(PcdAnticoll(card_id) == MI_OK)
           {
               printf("card_type:");
@@ -242,15 +294,11 @@ void RFID_entry(void const * argument)
               print_info(card_id, 4);
               printf("\r\n");
               Open_Door();
-              Close_Door();
+
           }
       }
 
-
-
-
-
-      osDelay(1000);
+      osDelay(500);
   }
   /* USER CODE END RFID_entry */
 }
@@ -287,15 +335,28 @@ void LED_entry(void const * argument)
 void Door_entry(void const * argument)
 {
   /* USER CODE BEGIN Door_entry */
+  uint8_t buf = 0;
+  uint8_t flag = 0;//用�?�判断门现在是关还是开 1是关， 0是开
   /* Infinite loop */
   for(;;)
   {
+      xQueueReceive(Door_LockHandle, &buf, 0);
+      if(buf == 1 && flag == 0)
+      {
+          Close_Door();
+          flag = 1;
+      }
+      if(buf == 0 && flag == 1)
+      {
+          Open_Door();
+          flag = 0;
+      }
+      buf = 3;
     //Open_Door();
     //osDelay(300);
     //Close_Door();
 
-
-    osDelay(3000);
+    osDelay(500);
   }
   /* USER CODE END Door_entry */
 }
@@ -311,16 +372,88 @@ void ESP32_entry(void const * argument)
 {
   /* USER CODE BEGIN ESP32_entry */
     char cmd[1024] = {0};
-    strcpy(cmd, "AT\r\n");
+    strcpy(cmd, "led6.value(abs(led6.value()-1))\r\n");
   /* Infinite loop */
   for(;;)
   {
 
-
-    HAL_UART_Transmit(&huart2, (uint8_t *)cmd, strlen(cmd) , 0x10);
+    //HAL_UART_Transmit(&huart2, (uint8_t *)cmd, strlen(cmd) , 0x10);
     osDelay(3000);
   }
   /* USER CODE END ESP32_entry */
+}
+
+/* USER CODE BEGIN Header_BS8116_entry */
+/**
+* @brief Function implementing the BS8116 thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_BS8116_entry */
+void BS8116_entry(void const * argument)
+{
+  /* USER CODE BEGIN BS8116_entry */
+  /* Infinite loop */
+  for(;;)
+  {
+      uint8_t buf = 0; //存键盘数�?�
+      if(!BS8116_IRQBS8116_IRQ)
+      {
+          buf = Bs8116_ReadKey();
+          xQueueSend(KeyboardHandle, &buf, 0);
+          //printf("%c\n", Bs8116_ReadKey());
+      }
+
+      osDelay(500);
+  }
+  /* USER CODE END BS8116_entry */
+}
+
+/* USER CODE BEGIN Header_Voice_enrty */
+/**
+* @brief Function implementing the Voice thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Voice_enrty */
+void Voice_enrty(void const * argument)
+{
+  /* USER CODE BEGIN Voice_enrty */
+  /* Infinite loop */
+  for(;;)
+  {
+    //Voice_Sendcmd(0x08);
+    osDelay(2000);
+  }
+  /* USER CODE END Voice_enrty */
+}
+
+/* USER CODE BEGIN Header_Password_entry */
+/**
+* @brief Function implementing the Password_deal thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Password_entry */
+void Password_entry(void const * argument)
+{
+  /* USER CODE BEGIN Password_entry */
+  uint8_t
+  uint8_t buf = 0;
+  /* Infinite loop */
+  for(;;)
+  {
+      if(xQueueReceive(KeyboardHandle, &buf, 0) != errQUEUE_EMPTY)
+      {
+          printf("%c\n", buf);
+
+      }
+
+
+
+    osDelay(500);
+  }
+  /* USER CODE END Password_entry */
 }
 
 /* Private application code --------------------------------------------------*/

@@ -13,7 +13,7 @@
 #define BS8116_IIC_SCL  (HAL_GPIO_ReadPin(BS8116_IIC1_SCLK_GPIO_Port, BS8116_IIC1_SCLK_Pin))
 
 
-#define BS8116_IRQ      (GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_1))
+#define BS8116_IRQBS8116_IRQ     (HAL_GPIO_ReadPin(BS8116_IRQ_GPIO_Port, BS8116_IRQ_Pin))
 
 
 

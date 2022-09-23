@@ -49,11 +49,11 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS User/RFID User/Functions User/EEPROM User/LCD User/BS8116 User/USART User/MOTOR User/ESP32 User/LED)
+include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32F4xx/Include Drivers/CMSIS/Include Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS User/RFID User/Functions User/EEPROM User/LCD User/BS8116 User/USART User/MOTOR User/ESP32 User/LED User/VOICE)
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xE)
 
-file(GLOB_RECURSE SOURCES "Core/*.*" "Middlewares/*.*" "Drivers/*.*" "User/RFID/*.*" "User/Functions/*.*" "User/EEPROM/*.*" "User/LCD/*.*" "User/BS8116/*.*" "User/USART/*.*" "User/MOTOR/*.*" "User/ESP32/*.*" "User/LED/*.*")
+file(GLOB_RECURSE SOURCES "Core/*.*" "Middlewares/*.*" "Drivers/*.*" "User/RFID/*.*" "User/Functions/*.*" "User/EEPROM/*.*" "User/LCD/*.*" "User/BS8116/*.*" "User/USART/*.*" "User/MOTOR/*.*" "User/ESP32/*.*" "User/LED/*.*" "User/VOICE/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F401RETX_FLASH.ld)
 

@@ -42,6 +42,7 @@ extern "C" {
 #include "bsp_led.h"
 #include "bsp_bs8116.h"
 #include "bsp_esp32.h"
+#include "bsp_voice.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -67,9 +68,11 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BACKUP_Pin GPIO_PIN_13
+#define BACKUP_GPIO_Port GPIOC
+#define BACKUP_EXTI_IRQn EXTI15_10_IRQn
 #define BS8116_IRQ_Pin GPIO_PIN_1
 #define BS8116_IRQ_GPIO_Port GPIOA
-#define BS8116_IRQ_EXTI_IRQn EXTI1_IRQn
 #define FLASH_SPI1_CS_Pin GPIO_PIN_4
 #define FLASH_SPI1_CS_GPIO_Port GPIOA
 #define FLASH_SPI1_SCLK_Pin GPIO_PIN_5
@@ -78,6 +81,10 @@ void Error_Handler(void);
 #define FLASH_SPI1_MISO_GPIO_Port GPIOA
 #define FLASH_SPI1_MOSI_Pin GPIO_PIN_7
 #define FLASH_SPI1_MOSI_GPIO_Port GPIOA
+#define VOICE_BUSY_Pin GPIO_PIN_4
+#define VOICE_BUSY_GPIO_Port GPIOC
+#define VOICE_DATA_Pin GPIO_PIN_5
+#define VOICE_DATA_GPIO_Port GPIOC
 #define LCD_LEDK_Pin GPIO_PIN_1
 #define LCD_LEDK_GPIO_Port GPIOB
 #define LCD_RESET_Pin GPIO_PIN_10

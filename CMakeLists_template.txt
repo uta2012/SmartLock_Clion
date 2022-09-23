@@ -48,11 +48,11 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(${includes} User/RFID User/Functions User/EEPROM User/LCD User/BS8116 User/USART User/MOTOR User/ESP32 User/LED)
+include_directories(${includes} User/RFID User/Functions User/EEPROM User/LCD User/BS8116 User/USART User/MOTOR User/ESP32 User/LED User/VOICE)
 
 add_definitions(${defines})
 
-file(GLOB_RECURSE SOURCES ${sources} "User/RFID/*.*" "User/Functions/*.*" "User/EEPROM/*.*" "User/LCD/*.*" "User/BS8116/*.*" "User/USART/*.*" "User/MOTOR/*.*" "User/ESP32/*.*" "User/LED/*.*")
+file(GLOB_RECURSE SOURCES ${sources} "User/RFID/*.*" "User/Functions/*.*" "User/EEPROM/*.*" "User/LCD/*.*" "User/BS8116/*.*" "User/USART/*.*" "User/MOTOR/*.*" "User/ESP32/*.*" "User/LED/*.*" "User/VOICE/*.*")
 
 set(LINKER_SCRIPT $${CMAKE_SOURCE_DIR}/${linkerScript})
 

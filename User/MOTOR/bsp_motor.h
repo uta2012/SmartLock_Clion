@@ -3,8 +3,11 @@
 
 #include "stm32f4xx_hal.h"
 #include "gpio.h"
-
-
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "task.h"
+#include "main.h"
+#include "cmsis_os.h"
 
 void Door_Init(void);
 void Open_Door(void);

@@ -197,15 +197,7 @@ uint8_t Bs8116_ReadKey(void)
 
 
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    if(GPIO_Pin == BS8116_IRQ_Pin)
-    {
 
-        printf("%d\n",Bs8116_ReadKey());
-    }
-
-}
 
 
 
