@@ -59,14 +59,23 @@ void ESP_Init(void)
 uint8_t a;
 uint8_t b;
 
-
+extern osMessageQId Door_LockHandle;
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if(huart->Instance == USART2)
     {
-
+        uint8_t i = 1;//1是锁门 0是开门
+        uint8_t j = 0;//1是锁门 0是开门
         HAL_UART_Transmit(&huart1, &b, 1, 0);
+        if(b == '1')
+        {
+            xQueueSendToBackFromISR(Door_LockHandle, &i, 0);
+        }
+        if(b == '0')
+        {
+            xQueueSendToBackFromISR(Door_LockHandle, &j, 0);
+        }
         HAL_UART_Receive_IT(&huart2, &b, 1);
     }
 

@@ -4,6 +4,7 @@
 #include "stm32f4xx_hal.h"
 #include "usart.h"
 
+
 extern uint8_t a;
 extern uint8_t b;
 

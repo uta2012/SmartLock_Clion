@@ -1,6 +1,8 @@
 #include "bsp_motor.h"
 
 
+uint8_t lock_status = 0;//0 is open status,and 1 is close status
+
 
 void Door_Init(void)
 {

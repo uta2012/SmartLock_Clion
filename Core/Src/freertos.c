@@ -56,6 +56,7 @@ osThreadId ESP32Handle;
 osThreadId BS8116Handle;
 osThreadId VoiceHandle;
 osThreadId Password_dealHandle;
+osThreadId MG200Handle;
 osMessageQId Door_LockHandle;
 osMessageQId KeyboardHandle;
 
@@ -73,6 +74,7 @@ void ESP32_entry(void const * argument);
 void BS8116_entry(void const * argument);
 void Voice_enrty(void const * argument);
 void Password_entry(void const * argument);
+void MG200_entry(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -116,7 +118,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* definition and creation of Door_Lock */
-  osMessageQDef(Door_Lock, 4, uint8_t);
+  osMessageQDef(Door_Lock, 1, uint8_t);
   Door_LockHandle = osMessageCreate(osMessageQ(Door_Lock), NULL);
 
   /* definition and creation of Keyboard */
@@ -133,19 +135,19 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of LCD */
-  osThreadDef(LCD, LCD_entry, osPriorityIdle, 0, 128);
+  osThreadDef(LCD, LCD_entry, osPriorityIdle, 0, 256);
   LCDHandle = osThreadCreate(osThread(LCD), NULL);
 
   /* definition and creation of RFID */
-  osThreadDef(RFID, RFID_entry, osPriorityIdle, 0, 128);
+  osThreadDef(RFID, RFID_entry, osPriorityIdle, 0, 256);
   RFIDHandle = osThreadCreate(osThread(RFID), NULL);
 
   /* definition and creation of LED */
-  osThreadDef(LED, LED_entry, osPriorityIdle, 0, 256);
+  osThreadDef(LED, LED_entry, osPriorityIdle, 0, 512);
   LEDHandle = osThreadCreate(osThread(LED), NULL);
 
   /* definition and creation of Door */
-  osThreadDef(Door, Door_entry, osPriorityHigh, 0, 128);
+  osThreadDef(Door, Door_entry, osPriorityHigh, 0, 256);
   DoorHandle = osThreadCreate(osThread(Door), NULL);
 
   /* definition and creation of ESP32 */
@@ -164,6 +166,10 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(Password_deal, Password_entry, osPriorityIdle, 0, 512);
   Password_dealHandle = osThreadCreate(osThread(Password_deal), NULL);
 
+  /* definition and creation of MG200 */
+  osThreadDef(MG200, MG200_entry, osPriorityIdle, 0, 128);
+  MG200Handle = osThreadCreate(osThread(MG200), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -180,7 +186,7 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  UBaseType_t task1, task2, task3, task4, task5, task6, task7, task8, task9;
+  UBaseType_t task1, task2, task3, task4, task5, task6, task7, task8, task9, task10;
   /* Infinite loop */
   for(;;)
   {
@@ -194,9 +200,9 @@ void StartDefaultTask(void const * argument)
     task7 = uxTaskGetStackHighWaterMark(BS8116Handle);
     task8 = uxTaskGetStackHighWaterMark(VoiceHandle);
     task9 = uxTaskGetStackHighWaterMark(Password_dealHandle);
+      task10 = uxTaskGetStackHighWaterMark(MG200Handle);
 
-
-    printf("task1 : %ld\n"
+    printf("\r\ntask1 : %ld\n"
            "task2 : %ld\n"
            "task3 : %ld\n"
            "task4 : %ld\n"
@@ -204,7 +210,9 @@ void StartDefaultTask(void const * argument)
            "task6 : %ld\n"
            "task7 : %ld\n"
            "task8 : %ld\n"
-           "task9 : %ld\n",
+           "task9 : %ld\n"
+           "task10 : %ld\n",
+
              task1,
              task2,
              task3,
@@ -213,9 +221,10 @@ void StartDefaultTask(void const * argument)
              task6,
              task7,
              task8,
-             task9
+             task9,
+             task10
              );
-    osDelay(3000);
+    osDelay(50000);
 
 
 
@@ -233,31 +242,30 @@ void StartDefaultTask(void const * argument)
 void LCD_entry(void const * argument)
 {
   /* USER CODE BEGIN LCD_entry */
-    uint8_t eng[] ={
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1F,0xFC,0x1F,0xFC,
-            0x10,0x08,0x30,0x10,0x20,0x10,0x20,0x20,0x00,0x20,0x00,0x40,0x00,0x40,0x00,0x40,
-            0x00,0x80,0x00,0x80,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x03,0x00,0x03,0x00,
-            0x03,0x00,0x03,0x00,0x03,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,/*"7",0*/
-    };
-
-
-    uint8_t chi[] = {
-
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xF0,0x04,0x00,0x9B,0xFC,0x3E,0x90,0x08,0x24,
-            0x90,0x08,0x24,0xA0,0x08,0x24,0xA3,0xC8,0x24,0xA2,0x48,0x24,0xA2,0x48,0x24,0xA2,
-            0x48,0x24,0x92,0x48,0x24,0x92,0x48,0x24,0x9A,0x48,0x3C,0x9B,0xC8,0x24,0xDA,0x48,
-            0x20,0xB0,0x08,0x00,0x80,0x08,0x00,0x80,0x08,0x00,0x80,0x08,0x00,0x80,0x08,0x00,
-            0x80,0x78,0x00,0x80,0x10,0x00,0x00,0x00,/*"啊",0*/
-
-
-    };
-
+//    uint8_t eng[] ={
+//            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x1F,0xFC,0x1F,0xFC,
+//            0x10,0x08,0x30,0x10,0x20,0x10,0x20,0x20,0x00,0x20,0x00,0x40,0x00,0x40,0x00,0x40,
+//            0x00,0x80,0x00,0x80,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x03,0x00,0x03,0x00,
+//            0x03,0x00,0x03,0x00,0x03,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,/*"7",0*/
+//    };
+//
+//
+//    uint8_t chi[] = {
+//
+//            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xF0,0x04,0x00,0x9B,0xFC,0x3E,0x90,0x08,0x24,
+//            0x90,0x08,0x24,0xA0,0x08,0x24,0xA3,0xC8,0x24,0xA2,0x48,0x24,0xA2,0x48,0x24,0xA2,
+//            0x48,0x24,0x92,0x48,0x24,0x92,0x48,0x24,0x9A,0x48,0x3C,0x9B,0xC8,0x24,0xDA,0x48,
+//            0x20,0xB0,0x08,0x00,0x80,0x08,0x00,0x80,0x08,0x00,0x80,0x08,0x00,0x80,0x08,0x00,
+//            0x80,0x78,0x00,0x80,0x10,0x00,0x00,0x00,/*"啊",0*/
+//
+//
+//    };
+//    Display_eng(100, 100, RED,WHITE,32,eng);
+//    Display_chi(150,150,RED,WHITE,24,chi);
   /* Infinite loop */
   for(;;)
   {
-    Display_eng(100, 100, RED,WHITE,32,eng);
-    Display_chi(150,150,RED,WHITE,24,chi);
-
+      
     //Display_Pic(0,0,gImage_123456);
 
     osDelay(3000);
@@ -285,17 +293,17 @@ void RFID_entry(void const * argument)
       {
           int i = 0;//�?�0是开门，�?�1是关门
           xQueueSend(Door_LockHandle, &i, 0);
-          if(PcdAnticoll(card_id) == MI_OK)
-          {
-              printf("card_type:");
-              print_info(CT, 4);
-              printf("\r\n");
-              printf("card_id:");
-              print_info(card_id, 4);
-              printf("\r\n");
-              Open_Door();
-
-          }
+//          if(PcdAnticoll(card_id) == MI_OK)
+//          {
+//              printf("card_type:");
+//              print_info(CT, 4);
+//              printf("\r\n");
+//              printf("card_id:");
+//              print_info(card_id, 4);
+//              printf("\r\n");
+//              Open_Door();
+//
+//          }
       }
 
       osDelay(500);
@@ -336,25 +344,43 @@ void Door_entry(void const * argument)
 {
   /* USER CODE BEGIN Door_entry */
   uint8_t buf = 0;
-  uint8_t flag = 0;//用�?�判断门现在是关还是开 1是关， 0是开
+
+
+  uint8_t timeout = 10;
   /* Infinite loop */
   for(;;)
   {
       xQueueReceive(Door_LockHandle, &buf, 0);
-      if(buf == 1 && flag == 0)
+      // control the lock
+      if(buf == 1 && lock_status == 0 && door_status == 1)
       {
           Close_Door();
-          flag = 1;
+          lock_status = 1;
       }
-      if(buf == 0 && flag == 1)
+      if(buf == 0 && lock_status == 1)
       {
           Open_Door();
-          flag = 0;
+
+          lock_status = 0;
       }
+
+      // 关门状�?下 5秒�?��?门
+      if(door_status == 1 && lock_status == 0)
+      {
+
+          timeout--;
+          //printf("%d", timeout);
+          if(timeout == 0 && lock_status == 0)
+          {
+              Close_Door();
+              lock_status = 1;
+              timeout = 10;
+          }
+      }
+
+
       buf = 3;
-    //Open_Door();
-    //osDelay(300);
-    //Close_Door();
+
 
     osDelay(500);
   }
@@ -372,7 +398,7 @@ void ESP32_entry(void const * argument)
 {
   /* USER CODE BEGIN ESP32_entry */
     char cmd[1024] = {0};
-    strcpy(cmd, "led6.value(abs(led6.value()-1))\r\n");
+    strcpy(cmd, "print()\r\n");
   /* Infinite loop */
   for(;;)
   {
@@ -419,11 +445,12 @@ void BS8116_entry(void const * argument)
 void Voice_enrty(void const * argument)
 {
   /* USER CODE BEGIN Voice_enrty */
+    //Voice_Sendcmd(0x18);
   /* Infinite loop */
   for(;;)
   {
-    //Voice_Sendcmd(0x08);
-    osDelay(2000);
+
+    osDelay(1);
   }
   /* USER CODE END Voice_enrty */
 }
@@ -438,14 +465,57 @@ void Voice_enrty(void const * argument)
 void Password_entry(void const * argument)
 {
   /* USER CODE BEGIN Password_entry */
-  uint8_t
+  uint8_t i = 0;//0是开�?
+  const static uint8_t pwd[4] = {'1', '2', '3', '4'};
+
+  uint8_t flag = 0;//记录状�?，1是开始记录密�?，0�?记录密�?
+  uint8_t password[4] = {0};//�?存密�?
+  uint8_t pwd_count = 0;//记录第几�?密�?
   uint8_t buf = 0;
   /* Infinite loop */
   for(;;)
   {
       if(xQueueReceive(KeyboardHandle, &buf, 0) != errQUEUE_EMPTY)
       {
-          printf("%c\n", buf);
+          if(flag == 1)
+          {
+              printf("%c", buf);
+              password[pwd_count] = buf;
+              pwd_count++;
+
+          }
+
+          //printf("%c\n", buf);
+          if(buf == '#' && flag == 0 && door_status == 1)
+          {
+              Voice_Sendcmd(0xC);
+              printf("#enter pwd:\n");
+              osDelay(500);
+              flag = 1;
+          }
+
+          if(buf == '*' && flag == 1)//接收完毕
+          {
+              printf("*\n");
+              flag = 0;
+              pwd_count = 0;
+              printf("authentic pwd\n");
+
+              if(memcmp(password, pwd, 4) == 0)
+              {
+                  xQueueSend(Door_LockHandle, &i, 0);
+                  Voice_Sendcmd(0x18);
+                  osDelay(500);
+              }
+              else
+              {
+                  printf("pwd error! %d\n", memcmp(password, pwd, 4));
+                  Voice_Sendcmd(0x19);
+              }
+
+              memset(password, 0, 4);
+          }
+
 
       }
 
@@ -454,6 +524,33 @@ void Password_entry(void const * argument)
     osDelay(500);
   }
   /* USER CODE END Password_entry */
+}
+
+/* USER CODE BEGIN Header_MG200_entry */
+/**
+* @brief Function implementing the MG200 thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_MG200_entry */
+void MG200_entry(void const * argument)
+{
+  /* USER CODE BEGIN MG200_entry */
+  uint8_t i = 0;
+  /* Infinite loop */
+  for(;;)
+  {
+
+      if(HAL_GPIO_ReadPin(MG200_DETECT_GPIO_Port, MG200_DETECT_Pin) == 1)
+      {
+          printf("MG200\n");
+          xQueueSend(Door_LockHandle, &i, 0);
+          osDelay(500);
+      }
+
+    osDelay(500);
+  }
+  /* USER CODE END MG200_entry */
 }
 
 /* Private application code --------------------------------------------------*/

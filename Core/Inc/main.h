@@ -71,6 +71,12 @@ void Error_Handler(void);
 #define BACKUP_Pin GPIO_PIN_13
 #define BACKUP_GPIO_Port GPIOC
 #define BACKUP_EXTI_IRQn EXTI15_10_IRQn
+#define MG200_DETECT_Pin GPIO_PIN_0
+#define MG200_DETECT_GPIO_Port GPIOC
+#define MG200_PWR_Pin GPIO_PIN_1
+#define MG200_PWR_GPIO_Port GPIOC
+#define MCU_WKUP_Pin GPIO_PIN_0
+#define MCU_WKUP_GPIO_Port GPIOA
 #define BS8116_IRQ_Pin GPIO_PIN_1
 #define BS8116_IRQ_GPIO_Port GPIOA
 #define FLASH_SPI1_CS_Pin GPIO_PIN_4

@@ -9,6 +9,12 @@
 #include "main.h"
 #include "cmsis_os.h"
 
+
+extern uint8_t lock_status;//0 is open status,and 1 is close status
+
+#define door_status HAL_GPIO_ReadPin(MCU_WKUP_GPIO_Port, MCU_WKUP_Pin)
+
+
 void Door_Init(void);
 void Open_Door(void);
 void Close_Door(void);
